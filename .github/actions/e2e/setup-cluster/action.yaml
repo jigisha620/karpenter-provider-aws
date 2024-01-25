@@ -138,8 +138,15 @@ runs:
           test/git_ref: "$GIT_REF"
       kubernetesNetworkConfig:
         ipFamily: "$IP_FAMILY"
+      vpc:
+        subnets:
+          private:
+            us-west-2a: { id: subnet-0361d64b9c715920b }
+            us-west-2b: { id: subnet-02f6e4c3f6ef4301e }
+            us-west-2c: { id: subnet-0a74576a5f5d4e426 }
       managedNodeGroups:
         - instanceType: c5.4xlarge
+          privateNetworking: true
           amiFamily: AmazonLinux2
           name: "$CLUSTER_NAME-system-pool"
           desiredCapacity: 2
