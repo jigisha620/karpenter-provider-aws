@@ -79,31 +79,6 @@ runs:
     uses: aws-actions/aws-codebuild-run-build@v1.0.13
     with:
       project-name: jigisha-codebuild-job
-      buildspec-override: |
-        version: 0.2
-        phases:
-          install:
-            runtime-versions:
-              nodejs: 16
-            commands:
-              - npm install -g typescript
-              - npm install
-          pre_build:
-            commands:
-              - echo Installing source NPM dependencies...
-          build:
-            commands:
-              - echo Build started on `date`
-              - tsc
-              - npm prune --production
-            post_build:
-              commands:
-                - echo Build completed on `date`
-        artifacts:
-          type: zip
-          files:
-            - package.json
-            - package-lock.json
   - name: create or upgrade cluster
     shell: bash
     env:
