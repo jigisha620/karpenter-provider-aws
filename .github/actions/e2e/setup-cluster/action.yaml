@@ -75,10 +75,6 @@ runs:
         --capabilities CAPABILITY_NAMED_IAM \
         --parameter-overrides "ClusterName=$CLUSTER_NAME" \
         --tags "testing/type=e2e" "testing/cluster=$CLUSTER_NAME" "github.com/run-url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" "karpenter.sh/discovery=$CLUSTER_NAME"
-  - name: Action For GitHub Actions
-    uses: aws-actions/aws-codebuild-run-build@v1.0.13
-    with:
-      project-name: jigisha-codebuild-job
   - name: create or upgrade cluster
     shell: bash
     env:
