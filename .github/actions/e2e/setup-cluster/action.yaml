@@ -219,7 +219,7 @@ runs:
             --service-name "${SERVICE}" \
             --subnet-ids ${SUBNET_IDS[@]} \
             --security-group-ids ${SECURITY_GROUP_IDS[@]} \
-            --tags "testing/type=e2e" "testing/cluster=$CLUSTER_NAME" "github.com/run-url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" "karpenter.sh/discovery=$CLUSTER_NAME"
+            --tag-specifications ResourceType=vpc-endpoint,Tags=[{Key=testing/type,Value=e2e"},{Key=testing/cluster,Value=$CLUSTER_NAME"},{Key=github.com/run-url,Value=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"},{Key=karpenter.sh/discovery,Value=$CLUSTER_NAME"}]
         done
       fi
   - name: tag oidc provider of the cluster
