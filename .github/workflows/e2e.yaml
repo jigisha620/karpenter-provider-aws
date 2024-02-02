@@ -144,7 +144,7 @@ jobs:
           METRICS_REGION: ${{ vars.TIMESTREAM_REGION }}
 #          CLUSTER_NAME: "${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}"
 #          INTERRUPTION_QUEUE: "${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}"
-        uses: aws-actions/aws-codebuild-run-build@v1.0.13
+        uses: aws-actions/aws-codebuild-run-build@bafa4d8b0d8802b5adf3a54861f530792d2e4f24 #v1.0.15
         with:
           project-name: jigisha-codebuild-job
           buildspec-override: |
