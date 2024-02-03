@@ -119,24 +119,24 @@ jobs:
           fi
           echo "Using cluster name \"$CLUSTER_NAME\""
           echo CLUSTER_NAME="$CLUSTER_NAME" >> "$GITHUB_OUTPUT"
-#      - name: setup eks cluster '${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}'
-#        if: inputs.cluster_name == ''
-#        uses: ./.github/actions/e2e/setup-cluster
-#        with:
-#          account_id: ${{ vars.CI_ACCOUNT_ID }}
-#          role: ${{ vars.CI_ROLE_NAME }}
-#          region: ${{ inputs.region }}
-#          cluster_name: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
-#          k8s_version: ${{ inputs.k8s_version }}
-#          eksctl_version: v0.169.0
-#          ip_family: ${{ contains(inputs.suite, 'IPv6') && 'IPv6' || 'IPv4' }} # Set the value to IPv6 if IPv6 suite, else IPv4
-#          private_cluster: ${{ inputs.suite == 'PrivateCluster' }}
-#          git_ref: ${{ inputs.git_ref }}
-#          ecr_account_id: ${{ vars.SNAPSHOT_ACCOUNT_ID }}
-#          ecr_region: ${{ vars.SNAPSHOT_REGION }}
-#          prometheus_workspace_id: ${{ vars.WORKSPACE_ID }}
-#          prometheus_region: ${{ vars.PROMETHEUS_REGION }}
-#          enable_local_zones: ${{ inputs.suite == 'LocalZone' }}
+      - name: setup eks cluster '${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}'
+        if: inputs.cluster_name == ''
+        uses: ./.github/actions/e2e/setup-cluster
+        with:
+          account_id: ${{ vars.CI_ACCOUNT_ID }}
+          role: ${{ vars.CI_ROLE_NAME }}
+          region: ${{ inputs.region }}
+          cluster_name: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
+          k8s_version: ${{ inputs.k8s_version }}
+          eksctl_version: v0.169.0
+          ip_family: ${{ contains(inputs.suite, 'IPv6') && 'IPv6' || 'IPv4' }} # Set the value to IPv6 if IPv6 suite, else IPv4
+          private_cluster: ${{ inputs.suite == 'PrivateCluster' }}
+          git_ref: ${{ inputs.git_ref }}
+          ecr_account_id: ${{ vars.SNAPSHOT_ACCOUNT_ID }}
+          ecr_region: ${{ vars.SNAPSHOT_REGION }}
+          prometheus_workspace_id: ${{ vars.WORKSPACE_ID }}
+          prometheus_region: ${{ vars.PROMETHEUS_REGION }}
+          enable_local_zones: ${{ inputs.suite == 'LocalZone' }}
       - name: Action For GitHub Actions
         if: inputs.suite == 'PrivateCluster'
         env:
