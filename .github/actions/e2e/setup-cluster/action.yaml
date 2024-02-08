@@ -141,9 +141,9 @@ runs:
       vpc:
         subnets:
           private:
-            us-west-2b: { id: subnet-017d54f41d8de9030 }
-            us-west-2c: { id: subnet-057eaf5a6adcf2c60 }
-            us-west-2d: { id: subnet-081af1214aed6558d }
+            us-west-2a: { id: subnet-07374fadd80b8890f }
+            us-west-2b: { id: subnet-0c8d117efb58981cc }
+            us-west-2c: { id: subnet-097d770c80f46f5e9 }
       managedNodeGroups:
         - instanceType: c5.4xlarge
           privateNetworking: true
