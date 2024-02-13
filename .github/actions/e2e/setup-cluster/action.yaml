@@ -193,6 +193,11 @@ runs:
       if [[ $PRIVATE_CLUSTER == 'true' ]]; then
         yq -i '.privateCluster.enabled=true' clusterconfig.yaml
         yq -i '.managedNodeGroups[0].privateNetworking=true' clusterconfig.yaml
+        if [[ $REGION == 'us-west-2' ]]; then
+          yq -i '.vpc.subnets.private.us-west-2a.id="subnet-06d936e620b5dbc2f"' clusterconfig.yaml
+          yq -i '.vpc.subnets.private.us-west-2b.id="subnet-06a03992c3726b371"' clusterconfig.yaml
+          yq -i '.vpc.subnets.private.us-west-2c.id="subnet-03c119897e57362ae"' clusterconfig.yaml
+        fi
       fi
 
       eksctl ${cmd} cluster -f clusterconfig.yaml
@@ -212,7 +217,7 @@ runs:
             --service-name "${SERVICE}" \
             --subnet-ids ${SUBNET_IDS[@]} \
             --security-group-ids ${SECURITY_GROUP_IDS[@]} \
-            --tags "testing/type=e2e" "testing/cluster=$CLUSTER_NAME" "github.com/run-url=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" "karpenter.sh/discovery=$CLUSTER_NAME"
+            --tag-specifications 'ResourceType=vpc-endpoint,Tags=[{Key=testing/type,Value=e2e},{Key=testing/cluster,Value=$CLUSTER_NAME},{Key=github.com/run-url,Value=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}},{Key=karpenter.sh/discovery,Value=$CLUSTER_NAME}]'
         done
       fi
   - name: tag oidc provider of the cluster
@@ -231,6 +236,7 @@ runs:
       aws iam tag-open-id-connect-provider --open-id-connect-provider-arn $arn \
          --tags Key=test/git_ref,Value=$GIT_REF Key=testing/type,Value=e2e Key=testing/cluster,Value=$CLUSTER_NAME Key=github.com/run-url,Value=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
   - name: give KarpenterNodeRole permission to bootstrap
+    if: inputs.suite != 'PrivateCluster'
     shell: bash
     env:
       ACCOUNT_ID: ${{ inputs.account_id }}
@@ -255,6 +261,7 @@ runs:
         aws cloudformation describe-stack-events --stack-name $stack_name
       done
   - name: install prometheus
+    if: inputs.suite != 'PrivateCluster'
     uses: ./.github/actions/e2e/install-prometheus
     with:
       account_id: ${{ inputs.account_id }}
@@ -264,6 +271,7 @@ runs:
       workspace_id: ${{ inputs.prometheus_workspace_id }}
       git_ref: ${{ inputs.git_ref }}
   - name: install karpenter
+    if: inputs.suite != 'PrivateCluster'
     uses: ./.github/actions/e2e/install-karpenter
     with:
       account_id: ${{ inputs.account_id  }}
