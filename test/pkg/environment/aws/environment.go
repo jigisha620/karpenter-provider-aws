@@ -136,6 +136,11 @@ func (env *Environment) DefaultEC2NodeClass() *v1beta1.EC2NodeClass {
 			Tags: map[string]string{"karpenter.sh/discovery": env.ClusterName},
 		},
 	}
+	if _, ok := os.LookupEnv("PRIVATE_CLUSTER"); ok {
+		nodeClass.Spec.Role = ""
+		nodeClass.Spec.InstanceProfile = lo.ToPtr(fmt.Sprintf("KarpenterNodeInstanceProfile-%s", env.ClusterName))
+		return nodeClass
+	}
 	nodeClass.Spec.Role = fmt.Sprintf("KarpenterNodeRole-%s", env.ClusterName)
 	return nodeClass
 }
