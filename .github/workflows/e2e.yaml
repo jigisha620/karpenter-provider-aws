@@ -138,15 +138,72 @@ jobs:
           prometheus_region: ${{ vars.PROMETHEUS_REGION }}
           enable_local_zones: ${{ inputs.suite == 'LocalZone' }}
           cleanup: ${{ inputs.cleanup }}
+      - name: run tests for private cluster
+        if: ${{ inputs.suite == 'PrivateCluster' }}
+        env:
+          # If we are performing the PrivateCluster test suite, then we should just run the 'Integration' test suite
+          SUITE: "Integration"
+          CLUSTER_NAME: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
+          INTERRUPTION_QUEUE: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
+          VERSION: v3.12.3 # Pinned to this version since v3.13.0 has issues with anonymous pulls: https://github.com/helm/helm/issues/12423
+          PROMETHEUS_REGION: ${{ vars.PROMETHEUS_REGION }}
+          WORKSPACE_ID: ${{ vars.WORKSPACE_ID }}
+          ACCOUNT_ID: ${{ vars.CI_ACCOUNT_ID }}
+          K8S_VERSION: ${{ inputs.k8s_version }}
+          ECR_ACCOUNT_ID: ${{ vars.SNAPSHOT_ACCOUNT_ID }}
+          ECR_REGION: ${{ vars.SNAPSHOT_REGION }}
+          PRIVATE_CLUSTER: ${{ inputs.suite == 'PrivateCluster' }}
+          ENABLE_METRICS: ${{ inputs.enable_metrics }}
+          METRICS_REGION: ${{ vars.TIMESTREAM_REGION }}
+        uses: aws-actions/aws-codebuild-run-build@bafa4d8b0d8802b5adf3a54861f530792d2e4f24 #v1.0.15
+        with:
+          project-name: E2EPrivateClusterCodeBuildProject-us-west-2
+          buildspec-override: |
+            version: 0.2
+            phases:
+              install:
+                runtime-versions:
+                  golang: latest
+              build:
+                commands:
+                  - aws eks update-kubeconfig --name $CLUSTER_NAME
+                  - aws ecr get-login-password --region $ECR_REGION | docker login --username AWS --password-stdin $ECR_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com
+                  - chmod +x ./hack/scripts/noderole_bootstrap_permission.sh && ./hack/scripts/noderole_bootstrap_permission.sh
+                  - chmod +x ./hack/scripts/install_helm.sh && ./hack/scripts/install_helm.sh
+                  - helm plugin install https://github.com/databus23/helm-diff || true
+                  - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+                  - helm pull prometheus-community/kube-prometheus-stack
+                  - kubectl create ns prometheus || true
+                  - kubectl label ns prometheus scrape=enabled --overwrite=true
+                  - chmod +x ./hack/scripts/install_prometheus.sh && ./hack/scripts/install_prometheus.sh
+                  - kubectl label ns kube-system scrape=enabled --overwrite=true
+                  - kubectl label ns kube-system pod-security.kubernetes.io/warn=restricted --overwrite=true
+                  - chmod +x ./hack/scripts/install_karpenter.sh && ./hack/scripts/install_karpenter.sh
+                  - chmod +x ./hack/scripts/diff_karpenter.sh && ./hack/scripts/diff_karpenter.sh
+                  - kubectl delete nodepool --all
+                  - kubectl delete ec2nodeclass --all
+                  - kubectl delete deployment --all
+                  - PRIVATE_CLUSTER=$PRIVATE_CLUSTER TEST_SUITE="Integration" ENABLE_METRICS=$ENABLE_METRICS METRICS_REGION=$METRICS_REGION GIT_REF="$(git rev-parse HEAD)" CLUSTER_NAME=$CLUSTER_NAME CLUSTER_ENDPOINT="$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.endpoint" --output text)" INTERRUPTION_QUEUE=$CLUSTER_NAME make e2etests
+          env-vars-for-codebuild: |
+            SUITE,
+            CLUSTER_NAME,
+            INTERRUPTION_QUEUE,
+            VERSION,
+            PROMETHEUS_REGION,
+            WORKSPACE_ID,
+            ACCOUNT_ID,
+            K8S_VERSION,
+            ECR_ACCOUNT_ID,
+            ECR_REGION,
+            PRIVATE_CLUSTER,
+            ENABLE_METRICS,
+            METRICS_REGION
       - name: run the ${{ inputs.suite }} test suite
+        if: ${{ inputs.suite != 'PrivateCluster' }}
         env:
           SUITE: ${{ inputs.suite }}
           ENABLE_METRICS: ${{ inputs.enable_metrics }}
         run: |
-          # If we are performing the PrivateCluster test suite, then we should just run the 'Integration' test suite
-          if [[ $SUITE == 'PrivateCluster' ]]; then
-            SUITE="Integration"
-          fi
           aws eks update-kubeconfig --name ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
           # Clean up the cluster before running all tests
           kubectl delete nodepool --all
@@ -194,6 +251,7 @@ jobs:
           cluster_name: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
           git_ref: ${{ inputs.git_ref }}
           eksctl_version: v0.169.0
+          private_cluster: ${{ inputs.suite == 'PrivateCluster' }}
       - if: always() && github.event_name == 'workflow_run'
         uses: ./.github/actions/commit-status/end
         with:
