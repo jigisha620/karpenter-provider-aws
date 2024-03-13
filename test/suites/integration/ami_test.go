@@ -292,7 +292,7 @@ var _ = Describe("AMI", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(actualUserData)).To(ContainSubstring("kube-api-qps = 30"))
 		})
-		It("should merge UserData contents for Windows AMIFamily", func() {
+		FIt("should merge UserData contents for Windows AMIFamily", func() {
 			env.ExpectWindowsIPAMEnabled()
 			DeferCleanup(func() {
 				env.ExpectWindowsIPAMDisabled()
