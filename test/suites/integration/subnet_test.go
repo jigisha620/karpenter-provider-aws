@@ -36,8 +36,15 @@ import (
 )
 
 var _ = Describe("Subnets", func() {
+	var subnetTagValue string
+	BeforeEach(func() {
+		subnetTagValue = env.ClusterName
+		if env.PrivateCluster {
+			subnetTagValue = "privatecluster"
+		}
+	})
 	It("should use the subnet-id selector", func() {
-		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 		Expect(len(subnets)).ToNot(Equal(0))
 		shuffledAZs := lo.Shuffle(lo.Keys(subnets))
 		firstSubnet := subnets[shuffledAZs[0]][0]
@@ -56,7 +63,7 @@ var _ = Describe("Subnets", func() {
 		env.ExpectInstance(pod.Spec.NodeName).To(HaveField("SubnetId", HaveValue(Equal(firstSubnet))))
 	})
 	It("should use resource based naming as node names", func() {
-		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 		Expect(len(subnets)).ToNot(Equal(0))
 
 		allSubnets := lo.Flatten(lo.Values(subnets))
@@ -75,7 +82,7 @@ var _ = Describe("Subnets", func() {
 	})
 	It("should use the subnet tag selector with multiple tag values", func() {
 		// Get all the subnets for the cluster
-		subnets := env.GetSubnetNameAndIds(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+		subnets := env.GetSubnetNameAndIds(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 		Expect(len(subnets)).To(BeNumerically(">", 1))
 		firstSubnet := subnets[0]
 		lastSubnet := subnets[len(subnets)-1]
@@ -98,7 +105,7 @@ var _ = Describe("Subnets", func() {
 	})
 
 	It("should use a subnet within the AZ requested", func() {
-		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+		subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 		Expect(len(subnets)).ToNot(Equal(0))
 		shuffledAZs := lo.Shuffle(lo.Keys(subnets))
 
@@ -121,7 +128,7 @@ var _ = Describe("Subnets", func() {
 
 	It("should have the NodeClass status for subnets", func() {
 		env.ExpectCreated(nodeClass)
-		EventuallyExpectSubnets(env, nodeClass)
+		EventuallyExpectSubnets(env, nodeClass, subnetTagValue)
 	})
 })
 
@@ -171,8 +178,8 @@ type SubnetInfo struct {
 	ID   string
 }
 
-func EventuallyExpectSubnets(env *aws.Environment, nodeClass *v1beta1.EC2NodeClass) {
-	subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+func EventuallyExpectSubnets(env *aws.Environment, nodeClass *v1beta1.EC2NodeClass, subnetTagValue string) {
+	subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 	Expect(subnets).ToNot(HaveLen(0))
 	ids := sets.New(lo.Flatten(lo.Values(subnets))...)
 
