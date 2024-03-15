@@ -75,7 +75,11 @@ var _ = Describe("Persistent Volumes", func() {
 			env.ExpectCreatedNodeCount("==", 1)
 		})
 		It("should run a pod with a pre-bound persistent volume while respecting topology constraints", func() {
-			subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+			subnetTagValue := env.ClusterName
+			if env.PrivateCluster {
+				subnetTagValue = "privatecluster"
+			}
+			subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 			shuffledAZs := lo.Shuffle(lo.Keys(subnets))
 
 			pvc := test.PersistentVolumeClaim(test.PersistentVolumeClaimOptions{
@@ -110,6 +114,7 @@ var _ = Describe("Persistent Volumes", func() {
 
 	Context("Dynamic", func() {
 		var storageClass *storagev1.StorageClass
+		var subnetTagValue string
 		BeforeEach(func() {
 			// Ensure that the EBS driver is installed, or we can't run the test.
 			var ds appsv1.DaemonSet
@@ -130,6 +135,10 @@ var _ = Describe("Persistent Volumes", func() {
 				Provisioner:       aws.String("ebs.csi.aws.com"),
 				VolumeBindingMode: lo.ToPtr(storagev1.VolumeBindingWaitForFirstConsumer),
 			})
+			subnetTagValue = env.ClusterName
+			if env.PrivateCluster {
+				subnetTagValue = "privatecluster"
+			}
 		})
 
 		It("should run a pod with a dynamic persistent volume", func() {
@@ -145,7 +154,7 @@ var _ = Describe("Persistent Volumes", func() {
 			env.ExpectCreatedNodeCount("==", 1)
 		})
 		It("should run a pod with a dynamic persistent volume while respecting allowed topologies", func() {
-			subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": env.ClusterName})
+			subnets := env.GetSubnets(map[string]string{"karpenter.sh/discovery": subnetTagValue})
 			shuffledAZs := lo.Shuffle(lo.Keys(subnets))
 
 			storageClass.AllowedTopologies = []v1.TopologySelectorTerm{{
