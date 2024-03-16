@@ -27,10 +27,14 @@ var _ = Describe("NetworkInterfaces", func() {
 	DescribeTable(
 		"should correctly configure public IP assignment on instances",
 		func(associatePublicIPAddress *bool) {
+			subnetTagValue := env.ClusterName
+			if env.PrivateCluster {
+				subnetTagValue = "privatecluster"
+			}
 			nodeClass.Spec.SubnetSelectorTerms = []v1beta1.SubnetSelectorTerm{{
 				Tags: map[string]string{
 					"Name":                   "*Private*",
-					"karpenter.sh/discovery": env.ClusterName,
+					"karpenter.sh/discovery": subnetTagValue,
 				},
 			}}
 			nodeClass.Spec.AssociatePublicIPAddress = associatePublicIPAddress

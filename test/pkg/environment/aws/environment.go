@@ -19,6 +19,8 @@ import (
 	"os"
 	"testing"
 
+	coretest "sigs.k8s.io/karpenter/pkg/test"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
@@ -53,7 +55,11 @@ func init() {
 	corev1beta1.NormalizedLabels = lo.Assign(corev1beta1.NormalizedLabels, map[string]string{"topology.ebs.csi.aws.com/zone": corev1.LabelTopologyZone})
 }
 
-const WindowsDefaultImage = "mcr.microsoft.com/oss/kubernetes/pause:3.9"
+var WindowsDefaultImage = "mcr.microsoft.com/oss/kubernetes/pause:3.9"
+
+var InitContainerImage = "alpine"
+
+const PrivateClusterImage = "069919849861.dkr.ecr.us-west-2.amazonaws.com/ecr-public/eks-distro/kubernetes/pause:3.2"
 
 // ExcludedInstanceFamilies denotes instance families that have issues during resource registration due to compatibility
 // issues with versions of the VPR Resource Controller
@@ -76,6 +82,7 @@ type Environment struct {
 	ClusterName       string
 	ClusterEndpoint   string
 	InterruptionQueue string
+	PrivateCluster    bool
 }
 
 func NewEnvironment(t *testing.T) *Environment {
@@ -105,6 +112,11 @@ func NewEnvironment(t *testing.T) *Environment {
 		ClusterName:     lo.Must(os.LookupEnv("CLUSTER_NAME")),
 		ClusterEndpoint: lo.Must(os.LookupEnv("CLUSTER_ENDPOINT")),
 	}
+	if _, awsEnv.PrivateCluster = os.LookupEnv("PRIVATE_CLUSTER"); awsEnv.PrivateCluster {
+		coretest.DefaultImage = PrivateClusterImage
+		WindowsDefaultImage = "069919849861.dkr.ecr.us-west-2.amazonaws.com/k8s/pause:3.6"
+		InitContainerImage = "069919849861.dkr.ecr.us-west-2.amazonaws.com/ecr-public/docker/library/alpine:latest"
+	}
 	// Initialize the provider only if the INTERRUPTION_QUEUE environment variable is defined
 	if v, ok := os.LookupEnv("INTERRUPTION_QUEUE"); ok {
 		awsEnv.SQSProvider = lo.Must(sqs.NewProvider(env.Context, servicesqs.New(session), v))
@@ -130,6 +142,16 @@ func (env *Environment) DefaultEC2NodeClass() *v1beta1.EC2NodeClass {
 		{
 			Tags: map[string]string{"karpenter.sh/discovery": env.ClusterName},
 		},
+	}
+	if env.PrivateCluster {
+		nodeClass.Spec.SubnetSelectorTerms = []v1beta1.SubnetSelectorTerm{
+			{
+				Tags: map[string]string{"karpenter.sh/discovery": "privatecluster"},
+			},
+		}
+		nodeClass.Spec.Role = ""
+		nodeClass.Spec.InstanceProfile = lo.ToPtr(fmt.Sprintf("KarpenterNodeInstanceProfile-%s", env.ClusterName))
+		return nodeClass
 	}
 	nodeClass.Spec.SubnetSelectorTerms = []v1beta1.SubnetSelectorTerm{
 		{
