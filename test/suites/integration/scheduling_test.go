@@ -550,7 +550,7 @@ var _ = Describe("Scheduling", Ordered, ContinueOnFailure, func() {
 
 func ephemeralInitContainer(requirements v1.ResourceRequirements) v1.Container {
 	return v1.Container{
-		Image:     "alpine",
+		Image:     "069919849861.dkr.ecr.us-west-2.amazonaws.com/ecr-public/docker/library/alpine:latest",
 		Command:   []string{"/bin/sh"},
 		Args:      []string{"-c", "sleep 5"},
 		Resources: requirements,
