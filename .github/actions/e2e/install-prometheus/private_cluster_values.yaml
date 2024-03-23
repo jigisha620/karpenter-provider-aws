@@ -1,0 +1,78 @@
+prometheusOperator:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+  admissionWebhooks:
+    patch:
+      image:
+        registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/k8s"
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+  prometheusConfigReloader:
+    image:
+      registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/quay"
+  image:
+    registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/quay"
+prometheus-node-exporter:
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+nodeExporter:
+  enabled: false
+kube-state-metrics:
+  image:
+    registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/k8s"
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+grafana:
+  enabled: false
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+alertmanager:
+  alertmanagerSpec:
+    image:
+      registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/quay"
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+kubelet:
+  serviceMonitor:
+    # Enable CAdvisor metrics (this is enabled by default but explicitly specified for clarity)
+    # https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/templates/exporters/kubelet/servicemonitor.yaml#L41
+    cAdvisor: true
+    # Disable probes scrape endpoint
+    # https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/templates/exporters/kubelet/servicemonitor.yaml#L68
+    probes: false
+    # Disable resource scrape endpoint
+    # https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/templates/exporters/kubelet/servicemonitor.yaml#L95
+    resource: false
+    additionalLabels:
+      scrape: enabled
+prometheus:
+  prometheusSpec:
+    image:
+      registry: "069919849861.dkr.ecr.us-west-2.amazonaws.com/quay"
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+    resources:
+      requests:
+        cpu: 1
+        memory: 5Gi
+      limits:
+        cpu: 1
+        memory: 5Gi
+    serviceMonitorSelector:
+      matchLabels:
+        scrape: enabled
+    serviceMonitorNamespaceSelector:
+      matchLabels:
+        scrape: enabled
+    remoteWrite:
+      - queueConfig:
+          maxSamplesPerSend: 1000
+          maxShards: 200
+          capacity: 2500
