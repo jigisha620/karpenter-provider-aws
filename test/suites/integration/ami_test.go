@@ -209,7 +209,7 @@ var _ = Describe("AMI", func() {
 
 			env.ExpectInstance(pod.Spec.NodeName).To(HaveField("ImageId", HaveValue(Equal(customAMI))))
 		})
-		It("should have the EC2NodeClass status for AMIs using wildcard", func() {
+		FIt("should have the EC2NodeClass status for AMIs using wildcard", func() {
 			nodeClass.Spec.AMISelectorTerms = []v1beta1.AMISelectorTerm{
 				{
 					Name: "*",
