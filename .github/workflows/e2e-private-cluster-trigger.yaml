@@ -1,0 +1,19 @@
+name: E2EPrivateClusterTrigger
+on:
+  schedule:
+    - cron: '0 3 * * 4'
+jobs:
+  private-cluster-trigger:
+    permissions:
+      id-token: write # aws-actions/configure-aws-credentials@v4.0.1
+      statuses: write # ./.github/actions/commit-status/start
+    uses: ./.github/workflows/e2e.yaml
+    with:
+      suite: PrivateCluster
+      git_ref: ${{ needs.resolve.outputs.GIT_REF }}
+      region: us-east-1
+      workflow_trigger: "private_cluster"
+      # Default to true unless using a workflow_dispatch
+      cleanup: true
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
