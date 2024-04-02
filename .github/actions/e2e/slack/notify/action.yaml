@@ -23,13 +23,13 @@ runs:
     - id: get-run-name
       shell: bash
       env:
-        SUITE: ${{ inputs.suite }}
         WORKFLOW: ${{ inputs.workflow_trigger }}
       run: |
+        SUITE= ${{ inputs.suite }}
         if [[ "$WORKFLOW" == 'private_cluster' || "$WORKFLOW" == 'soak' ]]; then
           SUITE="$WORKFLOW"
         fi
-        if [[ ${{ github.event_name }} == "schedule" && "$WORKFLOW" != "soak" ]]; then
+        if [[ ${{ github.event_name }} == "schedule" && "$SUITE" != "soak" ]]; then
           RUN_NAME="$SUITE-periodic"
         elif [[ ${{ github.event_name }} == "schedule" ]]; then
           RUN_NAME="soak-periodic"
