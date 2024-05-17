@@ -75,11 +75,11 @@ e2etests: ## Run the e2e suite against your local cluster
 		go test \
 		-p 1 \
 		-count 1 \
-		-timeout 3h \
+		-timeout 5h \
 		-v \
 		./suites/$(shell echo $(TEST_SUITE) | tr A-Z a-z)/... \
 		--ginkgo.focus="${FOCUS}" \
-		--ginkgo.timeout=3h \
+		--ginkgo.timeout=5h \
 		--ginkgo.grace-period=3m \
 		--ginkgo.vv
 

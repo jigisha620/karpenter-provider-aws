@@ -12,10 +12,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package integration_test
+package scheduling_test
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/samber/lo"
@@ -36,6 +37,29 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var env *aws.Environment
+var nodeClass *v1beta1.EC2NodeClass
+var nodePool *corev1beta1.NodePool
+
+func TestIntegration(t *testing.T) {
+	RegisterFailHandler(Fail)
+	BeforeSuite(func() {
+		env = aws.NewEnvironment(t)
+	})
+	AfterSuite(func() {
+		env.Stop()
+	})
+	RunSpecs(t, "Integration")
+}
+
+var _ = BeforeEach(func() {
+	env.BeforeEach()
+	nodeClass = env.DefaultEC2NodeClass()
+	nodePool = env.DefaultNodePool(nodeClass)
+})
+var _ = AfterEach(func() { env.Cleanup() })
+var _ = AfterEach(func() { env.AfterEach() })
 
 var _ = Describe("Scheduling", Ordered, ContinueOnFailure, func() {
 	var selectors sets.Set[string]
