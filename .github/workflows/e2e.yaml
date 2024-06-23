@@ -196,17 +196,6 @@ jobs:
           role: ${{ vars.CI_ROLE_NAME }}
           region: ${{ inputs.region }}
           cluster_name: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
-      - name: cleanup karpenter and cluster '${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}' resources
-        uses: ./.github/actions/e2e/cleanup
-        if: always() && inputs.cleanup
-        with:
-          account_id: ${{ vars.CI_ACCOUNT_ID }}
-          role: ${{ vars.CI_ROLE_NAME }}
-          region: ${{ inputs.region }}
-          cluster_name: ${{ steps.generate-cluster-name.outputs.CLUSTER_NAME }}
-          git_ref: ${{ inputs.git_ref }}
-          eksctl_version: v0.180.0
-          private_cluster: ${{ inputs.workflow_trigger == 'private_cluster' }}
       - if: always() && github.event_name == 'workflow_run'
         uses: ./.github/actions/commit-status/end
         with:

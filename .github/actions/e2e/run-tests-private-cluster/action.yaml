@@ -95,7 +95,7 @@ runs:
       CLEANUP: ${{ inputs.cleanup }}
     uses: aws-actions/aws-codebuild-run-build@b31229dccde89c01530699df08ad07e8d7ac21a8 #v1.0.15
     with:
-      project-name: E2EPrivateClusterCodeBuildProject-us-east-1
+      project-name: E2EPrivateClusterCodeBuildProject-us-west-2
       buildspec-override: |
         version: 0.2
         phases:
@@ -131,10 +131,6 @@ runs:
               - kubectl describe pods -n kube-system -l app.kubernetes.io/name=karpenter
               # Describe nodes
               - kubectl describe nodes
-              - |
-                if [ "${CLEANUP}" = true ]; then
-                  ./test/hack/e2e_scripts/clean_private_cluster.sh
-                fi
       env-vars-for-codebuild: |
         SUITE,
         CLUSTER_NAME,
