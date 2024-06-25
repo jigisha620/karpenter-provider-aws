@@ -253,6 +253,9 @@ var _ = Describe("Validation", func() {
 			Expect(env.Client.Update(env.Context, nodeClass)).ToNot(Succeed())
 		})
 		It("should fail to switch between a managed and unmanaged instance profile", func() {
+			if env.PrivateCluster {
+				Skip("skipping Extended Resources test for private cluster")
+			}
 			nodeClass.Spec.Role = "test-role"
 			nodeClass.Spec.InstanceProfile = nil
 			Expect(env.Client.Create(env.Context, nodeClass)).To(Succeed())
