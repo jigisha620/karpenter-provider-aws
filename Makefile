@@ -108,6 +108,24 @@ upstream-e2etests: tidy download
 		--default-nodeclass="$(TMPFILE)"\
 		--default-nodepool="$(shell pwd)/test/pkg/environment/aws/default_nodepool.yaml"
 
+gen_instance_types:
+	go run hack/tools/instancetypes/gen_instance_types.go	
+
+upstream-perf-tests: tidy download gen_instance_types
+	CLUSTER_NAME=${CLUSTER_NAME} envsubst < $(shell pwd)/test/pkg/environment/aws/default_ec2nodeclass.yaml > ${TMPFILE}
+	go test \
+		-count 1 \
+		-timeout 3.25h \
+		-v \
+		$(KARPENTER_CORE_DIR)/test/suites/performance/... \
+		--ginkgo.focus="${FOCUS}" \
+		--ginkgo.timeout=3h \
+		--ginkgo.grace-period=5m \
+		--ginkgo.vv \
+		--default-nodeclass="$(TMPFILE)"\
+		--default-nodepool="$(shell pwd)/test/pkg/environment/aws/default_nodepool.yaml" \
+		--default-raw-instance-types="$(shell pwd)/kwok/cloudprovider/instance_types.json"		
+
 e2etests-deflake: ## Run the e2e suite against your local cluster
 	cd test && CLUSTER_NAME=${CLUSTER_NAME} ginkgo \
 		--focus="${FOCUS}" \
@@ -224,7 +242,7 @@ deploy-cfn: ## Deploys the cloudformation stack defined in the docs preview dire
 		--parameter-overrides "ClusterName=${CLUSTER_NAME}"
 
 
-.PHONY: help presubmit ci-test ci-non-test run test deflake e2etests e2etests-deflake benchmark coverage verify vulncheck licenses image apply install delete docgen codegen stable-release-pr snapshot release prepare-website toolchain issues website tidy download update-karpenter
+.PHONY: help presubmit ci-test ci-non-test run test deflake e2etests e2etests-deflake benchmark coverage verify vulncheck licenses image apply install delete docgen codegen stable-release-pr snapshot release prepare-website toolchain issues website tidy download update-karpenter gen_instance_types upstream-perf-tests
 
 define newline
 
