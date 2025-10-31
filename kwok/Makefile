@@ -1,7 +1,13 @@
 KARPENTER_NAMESPACE ?= kube-system
 KO_DOCKER_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/kwok-karpenter
-CPU_RESOURCES ?= "2"
-MEMORY_RESOURCES ?= "4Gi"
+CPU_RESOURCES ?= "1"
+MEMORY_RESOURCES ?= "1Gi"
+
+## Inject the app version into operator.Version
+LDFLAGS ?= -ldflags=-X=sigs.k8s.io/karpenter/pkg/operator.Version=$(shell git describe --tags --always | cut -d"v" -f2)
+
+GOFLAGS ?= $(LDFLAGS)
+WITH_GOFLAGS = GOFLAGS="$(GOFLAGS)"
 
 ## Extra helm options
 CLUSTER_NAME ?= $(shell kubectl config view --minify -o jsonpath='{.clusters[].name}' | rev | cut -d"/" -f1 | rev | cut -d"." -f1)
@@ -25,10 +31,14 @@ KARPENTER_CORE_DIR = $(shell go list -m -f '{{ .Dir }}' sigs.k8s.io/karpenter)
 
 .PHONY: image
 image: ## Build the KWOK controller images using ko build
-	$(eval CONTROLLER_IMG=$(shell KOCACHE=$(KOCACHE) KO_DOCKER_REPO="$(KO_DOCKER_REPO)" ko build --bare github.com/aws/karpenter-provider-aws/kwok))
+	$(eval CONTROLLER_IMG=$(shell $(WITH_GOFLAGS) KOCACHE=$(KOCACHE) KO_DOCKER_REPO="$(KO_DOCKER_REPO)" ko build --bare github.com/aws/karpenter-provider-aws/kwok))
+	@echo "CONTROLLER_IMG: $(CONTROLLER_IMG)"
 	$(eval IMG_REPOSITORY=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 1 | cut -d ":" -f 1))
 	$(eval IMG_TAG=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 1 | cut -d ":" -f 2 -s))
 	$(eval IMG_DIGEST=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 2))
+	@echo "IMG_REPOSITORY: $(IMG_REPOSITORY)"
+	@echo "IMG_TAG: $(IMG_TAG)"
+	@echo "IMG_DIGEST: $(IMG_DIGEST)"
 
 .PHONY: apply
 apply: image
@@ -45,7 +55,7 @@ apply: image
 
 .PHONY: delete
 delete:
-	helm uninstall karpenter --namespace ${KARPENTER_NAMESPACE}
+	helm uninstall kwok-karpenter --namespace ${KARPENTER_NAMESPACE}
 
 .PHONY: apply-kwok
 apply-kwok:
